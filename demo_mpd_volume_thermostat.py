@@ -3,6 +3,7 @@
 
 import mpd
 import paho.mqtt.client as mqtt
+import time
 
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
@@ -57,4 +58,8 @@ if (mqttConfig['user'] != ''):
 mqttc.connect(mqttConfig['server'], mqttConfig['port'], 60)
 mqttc.subscribe(prefix + 'thermostat/set', 2)
 
-mqttc.loop_forever()
+mqttc.loop_start()
+
+while True:
+	mpdc.ping()
+	time.sleep(30)
