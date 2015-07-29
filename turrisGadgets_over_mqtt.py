@@ -10,7 +10,7 @@ from threading import Timer
 
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
-__version__ = "0.1"
+__version__ = "0.2"
 __email__ = "rene@renekliment.cz"
 
 ############
