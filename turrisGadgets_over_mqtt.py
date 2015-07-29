@@ -86,7 +86,7 @@ def on_mqtt_message(mqttc, obj, msg):
 				if (msg.topic == prefix + devices[device]['mqttPath'] + '/alarm/control') and (msg.payload in ["0", "1"]):
 					states['ALARM'] = msg.payload
 					sendState({})
-					
+
 				elif (msg.topic == prefix + devices[device]['mqttPath'] + '/beep/control') and (msg.payload in ["none", "slow", "fast"]):
 					states['BEEP'] = msg.payload.upper()
 					sendState({})
@@ -128,6 +128,8 @@ while True:
 
 		if (devices.has_key(serial)):
 
+			mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lastseen', time.time(), 2, True);
+
 			if (product == 'RC-86K'):
 				chunks = message.split(' ')
 
@@ -145,7 +147,8 @@ while True:
 
 				if (chunks[0] == 'TAMPER'):
 					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
-				#TODO: implement other events
+				elif (chunks[0] == 'SENSOR'):
+					mqttc.publish(prefix + devices[serial]['mqttPath'], chunks[2][-1:], 2, True);
 
 			elif (product == 'JA-83P'):
 				chunks = message.split(' ')
@@ -154,7 +157,8 @@ while True:
 
 				if (chunks[0] == 'TAMPER'):
 					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
-				#TODO: implement other events
+				elif (chunks[0] == 'SENSOR'):
+					mqttc.publish(prefix + devices[serial]['mqttPath'], '', 2, False);
 
 			elif (product == 'JA-85ST'):
 				chunks = message.split(' ')
@@ -165,7 +169,10 @@ while True:
 					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
 				elif (chunks[0] == 'DEFECT'):
 					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/defect', chunks[2][-1:], 2, True);
-				#TODO: implement other events
+				elif (chunks[0] == 'SENSOR'):
+					mqttc.publish(prefix + devices[serial]['mqttPath'], '', 2, False);
+				elif (chunks[0] == 'BUTTON'):
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/button', '', 2, False);
 
 			elif (product == 'JA-82SH'):
 				chunks = message.split(' ')
@@ -174,7 +181,8 @@ while True:
 
 				if (chunks[0] == 'TAMPER'):
 					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
-				#TODO: implement other events
+				elif (chunks[0] == 'SENSOR'):
+					mqttc.publish(prefix + devices[serial]['mqttPath'], '', 2, False);
 
 			elif (product == 'JA-80L'):
 				chunks = message.split(' ')
@@ -183,7 +191,8 @@ while True:
 
 				if (chunks[0] == 'BUTTON'):
 					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/button', '', 2, False);
-				#TODO: implement other events
+				elif (chunks[0] == 'TAMPER'):
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', '', 2, False);
 
 			elif (product == 'TP-82N'):
 				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', message[-1:], 2, True);
