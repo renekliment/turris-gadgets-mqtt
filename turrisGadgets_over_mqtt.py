@@ -5,6 +5,8 @@ import paho.mqtt.client as mqtt
 import serial
 import time
 import re
+import random
+from threading import Timer
 
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
@@ -48,8 +50,6 @@ mqttConfig = {
 #  To be done  #
 ################
 #TODO: handle receiving the same message multiple times from a sensor (when it is desired)
-#TODO: send state message multiple times according to the docs
-
 ################################################################################################
 
 states = {
@@ -59,6 +59,9 @@ states = {
 	'BEEP': 'NONE'
 }
 
+statesToBe = None
+stateRepeatsLeft = 0
+
 ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=None)
 time.sleep(1)
 
@@ -67,10 +70,23 @@ def cmd(line):
 	ser.write("\x1B" + line + "\n")
 
 def sendState(newStates):
-	statesToBe = states.copy()
+	global statesToBe, stateRepeatsLeft
+
+	if (statesToBe is None):
+		statesToBe = states.copy()
+		stateRepeatsLeft = 3
+
+	if (newStates):
+		stateRepeatsLeft = 3
+
 	statesToBe.update(newStates)
 
 	cmd('TX ENROLL:0 PGX:' + statesToBe['PGX'] + ' PGY:' + statesToBe['PGY'] + ' ALARM:' + statesToBe['ALARM'] + ' BEEP:' + statesToBe['BEEP'])
+
+	stateRepeatsLeft -= 1
+
+	if (stateRepeatsLeft == 0):
+		statesToBe = None
 
 def on_mqtt_message(mqttc, obj, msg):
 
@@ -117,6 +133,12 @@ while True:
 			break
 
 		print("# FR: " + line)
+
+		if (line == 'OK'):
+			if (stateRepeatsLeft > 0) and (statesToBe is not None):
+
+				interval = 0.2 + random.random() * 0.3;
+				Timer(interval, sendState, [{}]).start()
 
 		if (line == 'OK') or (line == 'ERROR') or (line.startswith('TURRIS')):
 			break
