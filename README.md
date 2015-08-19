@@ -1,4 +1,4 @@
-# Turris Gadgets Playground (MQTT-centered)
+# Turris Gadgets (MQTT-centered) playground
 
 ## K čemu je to dobré
 
@@ -51,6 +51,11 @@ python setup.py install
 ## Symlink pro python
 `ln -s /usr/bin/python2.7 /usr/bin/python2`
 
+## Stažení MQTT brány
+
+1. `cd /root/`
+2. `git clone git://github.com/renekliment/turris-gadgets-mqtt.git`
+
 ## Nastavení MQTT brány
 V souboru `turrisGadgets_over_mqtt.py` nastavíme v sekci CONFIG:
 
@@ -61,18 +66,17 @@ V souboru `turrisGadgets_over_mqtt.py` nastavíme v sekci CONFIG:
 ## Spuštění Gadgets <---> MQTT brány
 **VAROVÁNÍ:** Skript vždy po spuštění vypne alarm/pípání a oba výstupy (zásuvky / relé), aby se dostal do definovaného stavu.
 
-1. Stáhneme obsah repositáře a umístíme např. do /root/turris-gadgets-playground/
-2. `python /root/turris-gadgets-playground/turrisGadgets_over_mqtt.py`
+`python /root/turris-gadgets-mqtt/turrisGadgets_over_mqtt.py`
 
 Pokud vše funguje a chceme nechat skript puštěný i po odhlášení z Turrisu:
 
 1. `opkg install screen`
-2. `screen -dmS turrisGadgets_over_mqtt /root/turris-gadgets-playground/turrisGadgets_over_mqtt.py`
+2. `screen -dmS turrisGadgets_over_mqtt /root/turris-gadgets-mqtt/turrisGadgets_over_mqtt.py`
 
 ## Testování komunikace s Gadgety
 Poslouchání zpráv od Gadgetů: `mosquitto_sub -h 192.168.1.1 -t "turrisGadgets/#" -v`, kde případně upravíme IP adresu Turrisu, na kterém běží mosquitto a prefix, pod kterým se Gadgety nacházejí. Můžeme pustit jak na Turrisu, tak z kteréhokoliv zařízení, které tento nástroj obsahuje a může se na Turris po síti dostat.
 
-Spínání zásuvek: 
+Spínání zásuvek:
 ```
 mosquitto_pub -h 192.168.1.1 -t turrisGadgets/room/socket/lamp/control -m 1
 mosquitto_pub -h 192.168.1.1 -t turrisGadgets/room/socket/lamp/control -m 0
@@ -84,5 +88,5 @@ Provádí se v příslušných souborech. Jedná se o nastavení:
 
 1. údajů pro připojení k MQTT brokeru (můžeme ponechat výchozí, pokud jsme nic neměnili)
 2. prefixu, který používáme pro Gadgety (pokud jsme ho změnili v souboru nastavení brány)
-3. jiných údajů (pro připojení k MPD, Twitteru, ...; pokud jsou relevantní) 
+3. jiných údajů (pro připojení k MPD, Twitteru, ...; pokud jsou relevantní)
 4. pokud jsme provedli změnu cesty komponent, musíme změnu reflektovat i v kódu - např. z _room/socket/lamp_ jsme udělali _room/socket/heater_
