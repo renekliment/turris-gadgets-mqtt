@@ -7,10 +7,11 @@ import time
 import re
 import random
 from threading import Timer
+from socket import error as socket_error
 
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
-__version__ = "0.2"
+__version__ = "0.3"
 __email__ = "rene@renekliment.cz"
 
 ############
@@ -109,6 +110,22 @@ def on_mqtt_message(mqttc, obj, msg):
 
 			break
 
+def on_mqtt_disconnect(mqttc, userdata, rc):
+
+	print("# Called on_disconnect!")
+	while True:
+		try:
+			if (mqttc.reconnect() == 0):
+				print("# Reconnected successfully.")
+				break
+		except socket_error:
+			pass
+
+		time.sleep(1)
+
+def on_mqtt_connect(mqttc, userdata, flags, rc):
+	mqttc.subscribe(prefix + '#', 2)
+	
 cmd('WHO AM I?')
 
 # gets the system in a defined state
@@ -116,12 +133,13 @@ sendState({})
 
 mqttc = mqtt.Client(client_id=mqttConfig['client_id'], protocol=3)
 mqttc.on_message = on_mqtt_message
+mqttc.on_disconnect = on_mqtt_disconnect
+mqttc.on_connect = on_mqtt_connect
 
 if (mqttConfig['user'] != ''):
 	mqttc.username_pw_set(mqttConfig['user'], mqttConfig['password'])
 
 mqttc.connect(mqttConfig['server'], mqttConfig['port'], 60)
-mqttc.subscribe(prefix + '#', 2)
 
 mqttc.loop_start()
 
