@@ -27,19 +27,23 @@ opkg install mosquitto mosquitto-client
 	```
 	opkg update
 	```
+	
 1. Instalace Gitu
 	```
 	opkg install git
 	```
+	
 2. Instalace python modulu pro práci se sériovým portem
 	```
 	opkg install pyserial
 	```
+	
 3. Instalace python setup tools
 	```
 	wget https://bootstrap.pypa.io/ez_setup.py
 	python ez_setup.py --insecure
 	```
+	
 4. Instalace MQTT python modulu
 	```
 	wget http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.python.git/snapshot/org.eclipse.paho.mqtt.python-1.1.tar.gz
@@ -47,10 +51,12 @@ opkg install mosquitto mosquitto-client
 	cd org.eclipse.paho.mqtt.python-1.1
 	python setup.py install
 	```
+	
 5. Instalace python YAML modulu
 	```
 	opkg install pyyaml
 	```
+	
 6. Instalace MPD python modulu - potřeba pouze pro demo s MPD
 	```
 	wget https://github.com/Mic92/python-mpd2/archive/v0.5.4.tar.gz
