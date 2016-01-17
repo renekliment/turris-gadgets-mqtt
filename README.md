@@ -24,40 +24,40 @@ opkg install mosquitto mosquitto-client
 ## Instalace závislostí 
 
 0. Aktualizace seznamu balíků
-```
-opkg update
-```
+	```
+	opkg update
+	```
 1. Instalace Gitu
-```
-opkg install git
-```
+	```
+	opkg install git
+	```
 2. Instalace python modulu pro práci se sériovým portem
-```
-opkg install pyserial
-```
+	```
+	opkg install pyserial
+	```
 3. Instalace python setup tools
-```
-wget https://bootstrap.pypa.io/ez_setup.py
-python ez_setup.py --insecure
-```
+	```
+	wget https://bootstrap.pypa.io/ez_setup.py
+	python ez_setup.py --insecure
+	```
 4. Instalace MQTT python modulu
-```
-wget http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.python.git/snapshot/org.eclipse.paho.mqtt.python-1.1.tar.gz
-tar xzf org.eclipse.paho.mqtt.python-1.1.tar.gz
-cd org.eclipse.paho.mqtt.python-1.1
-python setup.py install
-```
+	```
+	wget http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.python.git/snapshot/org.eclipse.paho.mqtt.python-1.1.tar.gz
+	tar xzf org.eclipse.paho.mqtt.python-1.1.tar.gz
+	cd org.eclipse.paho.mqtt.python-1.1
+	python setup.py install
+	```
 5. Instalace python YAML modulu
-```
-opkg install pyyaml
-```
+	```
+	opkg install pyyaml
+	```
 6. Instalace MPD python modulu - potřeba pouze pro demo s MPD
-```
-wget https://github.com/Mic92/python-mpd2/archive/v0.5.4.tar.gz
-tar xzf v0.5.4.tar.gz
-cd python-mpd2-0.5.4
-python setup.py install
-```
+	```
+	wget https://github.com/Mic92/python-mpd2/archive/v0.5.4.tar.gz
+	tar xzf v0.5.4.tar.gz
+	cd python-mpd2-0.5.4
+	python setup.py install
+	```
 
 ## Symlink pro python
 `ln -s /usr/bin/python2.7 /usr/bin/python2`
