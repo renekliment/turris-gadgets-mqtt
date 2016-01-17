@@ -1,0 +1,66 @@
+serial:
+    port: "/dev/ttyUSB0"
+    baudrate: 57600
+    timeout: 30
+
+mqtt:
+    prefix: "turrisGadgets/"
+    server: "localhost"
+    port: 1883
+    timeout: 60
+    client_id: "turrisGadgets"
+    default_qos: 2
+
+    # leave empty for anonymous access
+    user: 
+    password: 
+
+devices: 
+    # the keys are serial numbers of the devices
+    '00000001': 
+        'product': 'RC-86K'
+        'mqttPath': 'remote1L'
+    '00000002':
+        'product': 'RC-86K'
+        'mqttPath': 'remote1R'
+    '00000003':
+        'product': 'RC-86K'
+        'mqttPath': 'remote2L'
+    '00000004':
+        'product': 'RC-86K'
+        'mqttPath': 'remote2R'
+    '00000005':
+        'product': 'JA-81M'
+        'mqttPath': 'hallway/maindoor'
+    '00000006':
+        'product': 'JA-83M'
+        'mqttPath': 'room/balconywindow'
+    '00000007':
+        'product': 'JA-83M'
+        'mqttPath': 'room/window'
+    '00000008':
+        'product': 'JA-83P'
+        'mqttPath': 'room/pir'
+    '00000009':
+        'product': 'JA-83P'
+        'mqttPath': 'hallway/pir'
+    '00000010':
+        'product': 'JA-85ST'
+        'mqttPath': 'livingroom/smokedetector'
+    '00000011':
+        'product': 'JA-82SH'
+        'mqttPath': 'livingroom/vault'
+    '00000012':
+        'product': 'JA-80L'
+        'mqttPath': 'siren'
+    '00000013':
+        'product': 'TP-82N'
+        'mqttPath': 'thermostat'
+    '00000014':
+        'product': 'AC-88'
+        'mqttPath': 'room/socket/speakers'
+        'stateLabel': 'PGY'
+    '00000015':
+        'product': 'AC-88'
+        'mqttPath': 'room/socket/lamp'
+        'stateLabel': 'PGX'

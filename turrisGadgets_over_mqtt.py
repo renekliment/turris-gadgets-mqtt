@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+import os
+import yaml
 import paho.mqtt.client as mqtt
 import serial
 import time
@@ -11,47 +13,18 @@ from socket import error as socket_error
 
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
-__version__ = "0.3"
+__version__ = "0.4"
 __email__ = "rene@renekliment.cz"
 
-############
-#  CONFIG  #
-############
-
-prefix = "turrisGadgets/"
-
-# dict keys are serial numbers
-devices = {
-	'00000001': {'product': 'RC-86K', 'mqttPath': 'remote1L'},
-	'00000002': {'product': 'RC-86K', 'mqttPath': 'remote1R'},
-	'00000003': {'product': 'RC-86K', 'mqttPath': 'remote2L'},
-	'00000004': {'product': 'RC-86K', 'mqttPath': 'remote2R'},
-	'00000005': {'product': 'JA-81M', 'mqttPath': 'hallway/maindoor'},
-	'00000006': {'product': 'JA-83M', 'mqttPath': 'room/balconywindow'},
-	'00000007': {'product': 'JA-83M', 'mqttPath': 'room/window'},
-	'00000008': {'product': 'JA-83P', 'mqttPath': 'room/pir'},
-	'00000009': {'product': 'JA-83P', 'mqttPath': 'hallway/pir'},
-	'00000010': {'product': 'JA-85ST', 'mqttPath': 'livingroom/smokedetector'},
-	'00000011': {'product': 'JA-82SH', 'mqttPath': 'livingroom/vault'},
-	'00000012': {'product': 'JA-80L', 'mqttPath': 'siren'},
-	'00000013': {'product': 'TP-82N', 'mqttPath': 'thermostat'},
-	'00000014': {'product': 'AC-88', 'mqttPath': 'room/socket/speakers', 'stateLabel': 'PGY'},
-	'00000015': {'product': 'AC-88', 'mqttPath': 'room/socket/lamp', 'stateLabel': 'PGX'}
-}
-
-mqttConfig = {
-	'server':	'localhost',
-	'port':		1883,
-	'client_id':'turrisGadgets',
-	'user':		'', # leave empty for anonymous access
-	'password': ''
-}
-
-################
-#  To be done  #
-################
 #TODO: handle receiving the same message multiple times from a sensor (when it is desired)
-################################################################################################
+
+
+swd = os.path.dirname(os.path.abspath(__file__)) + '/'
+with open(swd + "config.yaml", 'r') as f:
+	config = yaml.load(f)
+
+prefix = config['mqtt']['prefix']
+devices = config['devices']
 
 states = {
 	'PGX': '0',
@@ -63,7 +36,7 @@ states = {
 statesToBe = None
 stateRepeatsLeft = 0
 
-ser = serial.Serial('/dev/ttyUSB0', 57600, timeout=None)
+ser = serial.Serial(config['serial']['port'], config['serial']['baudrate'], timeout=config['serial']['timeout'])
 time.sleep(1)
 
 def cmd(line):
@@ -124,22 +97,22 @@ def on_mqtt_disconnect(mqttc, userdata, rc):
 		time.sleep(1)
 
 def on_mqtt_connect(mqttc, userdata, flags, rc):
-	mqttc.subscribe(prefix + '#', 2)
+	mqttc.subscribe(prefix + '#', config['mqtt']['default_qos'])
 	
 cmd('WHO AM I?')
 
 # gets the system in a defined state
 sendState({})
 
-mqttc = mqtt.Client(client_id=mqttConfig['client_id'], protocol=3)
+mqttc = mqtt.Client(client_id=config['mqtt']['client_id'], protocol=3)
 mqttc.on_message = on_mqtt_message
 mqttc.on_disconnect = on_mqtt_disconnect
 mqttc.on_connect = on_mqtt_connect
 
-if (mqttConfig['user'] != ''):
-	mqttc.username_pw_set(mqttConfig['user'], mqttConfig['password'])
+if (config['mqtt']['user'] != ''):
+	mqttc.username_pw_set(config['mqtt']['user'], config['mqtt']['password'])
 
-mqttc.connect(mqttConfig['server'], mqttConfig['port'], 60)
+mqttc.connect(config['mqtt']['server'], config['mqtt']['port'], config['mqtt']['timeout'])
 
 mqttc.loop_start()
 
@@ -168,82 +141,82 @@ while True:
 
 		if (devices.has_key(serial)):
 
-			mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lastseen', time.time(), 2, True);
+			mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lastseen', time.time(), config['mqtt']['default_qos'], True);
 
 			if (product == 'RC-86K'):
 				chunks = message.split(' ')
 
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], config['mqtt']['default_qos'], True);
 
 				if (chunks[0] == 'PANIC'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'], 'panic', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'], 'panic', config['mqtt']['default_qos'], False);
 				else:
-					mqttc.publish(prefix + devices[serial]['mqttPath'], chunks[0][-1:], 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'], chunks[0][-1:], config['mqtt']['default_qos'], False);
 
 			elif (product == 'JA-81M') or (product == 'JA-83M'):
 				chunks = message.split(' ')
 
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], config['mqtt']['default_qos'], True);
 
 				if (chunks[0] == 'TAMPER'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], config['mqtt']['default_qos'], True);
 				elif (chunks[0] == 'SENSOR'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'], chunks[2][-1:], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'], chunks[2][-1:], config['mqtt']['default_qos'], True);
 
 			elif (product == 'JA-83P'):
 				chunks = message.split(' ')
 
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], config['mqtt']['default_qos'], True);
 
 				if (chunks[0] == 'TAMPER'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], config['mqtt']['default_qos'], True);
 				elif (chunks[0] == 'SENSOR'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'], '', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'], '', config['mqtt']['default_qos'], False);
 
 			elif (product == 'JA-85ST'):
 				chunks = message.split(' ')
 
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], config['mqtt']['default_qos'], True);
 
 				if (chunks[0] == 'TAMPER'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], config['mqtt']['default_qos'], True);
 				elif (chunks[0] == 'DEFECT'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/defect', chunks[2][-1:], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/defect', chunks[2][-1:], config['mqtt']['default_qos'], True);
 				elif (chunks[0] == 'SENSOR'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'], '', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'], '', config['mqtt']['default_qos'], False);
 				elif (chunks[0] == 'BUTTON'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/button', '', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/button', '', config['mqtt']['default_qos'], False);
 
 			elif (product == 'JA-82SH'):
 				chunks = message.split(' ')
 
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], config['mqtt']['default_qos'], True);
 
 				if (chunks[0] == 'TAMPER'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', chunks[2][-1:], config['mqtt']['default_qos'], True);
 				elif (chunks[0] == 'SENSOR'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'], '', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'], '', config['mqtt']['default_qos'], False);
 
 			elif (product == 'JA-80L'):
 				chunks = message.split(' ')
 
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/blackout', message[-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/blackout', message[-1:], config['mqtt']['default_qos'], True);
 
 				if (chunks[0] == 'BUTTON'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/button', '', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/button', '', config['mqtt']['default_qos'], False);
 				elif (chunks[0] == 'TAMPER'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', '', 2, False);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/tamper', '', config['mqtt']['default_qos'], False);
 
 			elif (product == 'TP-82N'):
-				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', message[-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', message[-1:], config['mqtt']['default_qos'], True);
 
 				if (message[0:3] == 'SET'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/set', message[4:8], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/set', message[4:8], config['mqtt']['default_qos'], True);
 				elif (message[0:3] == 'INT'):
-					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/measured', message[4:8], 2, True);
+					mqttc.publish(prefix + devices[serial]['mqttPath'] + '/measured', message[4:8], config['mqtt']['default_qos'], True);
 
 			elif (product == 'AC-88'):
 				states[devices[serial]['stateLabel']] = message[-1:]
-				mqttc.publish(prefix + devices[serial]['mqttPath'], message[-1:], 2, True);
+				mqttc.publish(prefix + devices[serial]['mqttPath'], message[-1:], config['mqtt']['default_qos'], True);
 
 	time.sleep(0.1)

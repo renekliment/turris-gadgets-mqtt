@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+import os
+import yaml
 import mpd
 import paho.mqtt.client as mqtt
 import time
@@ -8,30 +10,15 @@ from socket import error as socket_error
 
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
-__version__ = "0.2"
+__version__ = "0.3"
 __email__ = "rene@renekliment.cz"
 
-############
-#  CONFIG  #
-############
+swd = os.path.dirname(os.path.abspath(__file__)) + '/'
+with open(swd + "config.demo_mpd_volume_thermostat.yaml", 'r') as f:
+	config = yaml.load(f)
 
-prefix = 'turrisGadgets/'
+prefix = config['mqtt']['prefix']
 
-mpdConfig = {
-	'server':	'localhost',
-	'port':		6600,
-	'password': '' # leave empty for anonymous access
-}
-
-mqttConfig = {
-	'server':	'localhost',
-	'port':		1883,
-	'client_id':'mpd_volume_thermostat',
-	'user':		'', # leave empty for anonymous access
-	'password': ''
-}
-
-#####################################################################################
 def on_mqtt_message(mqttc, obj, msg):
 
 	# This condition is not needed since we **only subscribe to this single topic** (see the mqttc.subscribe call below),
@@ -56,25 +43,25 @@ def on_mqtt_disconnect(mqttc, userdata, rc):
 		time.sleep(1)
 
 def on_mqtt_connect(mqttc, userdata, flags, rc):
-	mqttc.subscribe(prefix + 'thermostat/set', 2)
+	mqttc.subscribe(prefix + 'thermostat/set', config['mqtt']['default_qos'])
 		
 # MPD client
 mpdc = mpd.MPDClient(use_unicode=True)
-mpdc.connect(mpdConfig['server'], mpdConfig['port'])
+mpdc.connect(config['mpd']['server'], config['mpd']['port'])
 
-if (mpdConfig['password'] != ''):
-	mpdc.password(mpdConfig['password'])
+if (config['mpd']['password'] != ''):
+	mpdc.password(config['mpd']['password'])
 
 # MQTT client
-mqttc = mqtt.Client(client_id=mqttConfig['client_id'], protocol=3)
+mqttc = mqtt.Client(client_id=config['mqtt']['client_id'], protocol=3)
 mqttc.on_message = on_mqtt_message
 mqttc.on_disconnect = on_mqtt_disconnect
 mqttc.on_connect = on_mqtt_connect
 
-if (mqttConfig['user'] != ''):
-	mqttc.username_pw_set(mqttConfig['user'], mqttConfig['password'])
+if (config['mqtt']['user'] != ''):
+	mqttc.username_pw_set(config['mqtt']['user'], config['mqtt']['password'])
 
-mqttc.connect(mqttConfig['server'], mqttConfig['port'], 60)
+mqttc.connect(config['mqtt']['server'], config['mqtt']['port'], config['mqtt']['timeout'])
 
 mqttc.loop_start()
 

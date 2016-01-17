@@ -1,0 +1,11 @@
+mqtt:
+    prefix: "turrisGadgets/"
+    server: "localhost"
+    port: 1883
+    timeout: 60
+    client_id: "demo_remote_control_socket"
+    default_qos: 2
+
+    # leave empty for anonymous access
+    user: 
+    password: 

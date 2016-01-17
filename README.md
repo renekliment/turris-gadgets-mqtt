@@ -21,18 +21,30 @@ opkg install mosquitto mosquitto-client
 
 **POZNÁMKA:** Je vhodné (ale ne nutné) si zkompilovat novější verzi _mosquitta_ s podporou WebSockets.
 
-## Instalace python modulu pro práci se sériovým portem
+## Instalace závislostí 
+
+0. Aktualizace seznamu balíků
+```
+opkg update
+```
+
+1. Instalace Gitu
+```
+opkg install git
+```
+
+2. Instalace python modulu pro práci se sériovým portem
 ```
 opkg install pyserial
 ```
 
-## Instalace python setup tools
+3. Instalace python setup tools
 ```
 wget https://bootstrap.pypa.io/ez_setup.py
 python ez_setup.py --insecure
 ```
 
-## Instalace MQTT python modulu
+4. Instalace MQTT python modulu
 ```
 wget http://git.eclipse.org/c/paho/org.eclipse.paho.mqtt.python.git/snapshot/org.eclipse.paho.mqtt.python-1.1.tar.gz
 tar xzf org.eclipse.paho.mqtt.python-1.1.tar.gz
@@ -40,7 +52,12 @@ cd org.eclipse.paho.mqtt.python-1.1
 python setup.py install
 ```
 
-## Instalace MPD python modulu - potřeba pouze pro demo s MPD
+5. Instalace python YAML modulu
+```
+opkg install pyyaml
+```
+
+6. Instalace MPD python modulu - potřeba pouze pro demo s MPD
 ```
 wget https://github.com/Mic92/python-mpd2/archive/v0.5.4.tar.gz
 tar xzf v0.5.4.tar.gz
@@ -57,11 +74,18 @@ python setup.py install
 2. `git clone git://github.com/renekliment/turris-gadgets-mqtt.git`
 
 ## Nastavení MQTT brány
-V souboru `turrisGadgets_over_mqtt.py` nastavíme v sekci CONFIG:
+
+`cd turris-gadgets-mqtt`
+
+Zkopírujeme si šablonu konfigurace do finálního souboru `cp config.template.yaml config.yaml`.
+
+V souboru `config.yaml` nastavíme:
 
 1. údaje pro připojení k MQTT brokeru (můžeme ponechat výchozí, pokud jsme nic neměnili)
 2. sériová čísla Gadgetů - jsou to klíče v poli devices
 3. podle potřeb si upravíme příslušné _mqttPath_
+
+**Upozornění:** V souborech YAML se nesmí používat tabulátory. Odsazení úrovní se dělá pomocí mezer.
 
 ## Spuštění Gadgets <---> MQTT brány
 **VAROVÁNÍ:** Skript vždy po spuštění vypne alarm/pípání a oba výstupy (zásuvky / relé), aby se dostal do definovaného stavu.
@@ -84,7 +108,7 @@ mosquitto_pub -h 192.168.1.1 -t turrisGadgets/room/socket/lamp/control -m 0
 Mezi přepínáním stavu _reléových_ zařízení je třeba pár sekund vyčkat.
 
 ## Nastavení demo aplikací
-Provádí se v příslušných souborech. Jedná se o nastavení:
+Provádí se v příslušných konfiguračních souborech (vždy zkopírujeme šablonové soubory na stejné jméno, jen bez _.template_). Jedná se o nastavení:
 
 1. údajů pro připojení k MQTT brokeru (můžeme ponechat výchozí, pokud jsme nic neměnili)
 2. prefixu, který používáme pro Gadgety (pokud jsme ho změnili v souboru nastavení brány)
