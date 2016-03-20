@@ -15,6 +15,19 @@ mqtt:
     user: 
     password: 
 
+automessages:
+    last_will:
+        topic: 'connected'
+        payload: 0
+        qos: 2
+        retain: true
+        
+    on_connect:
+        - topic: 'connected'
+          payload: 1
+          qos: 2
+          retain: true
+    
 devices: 
     # the keys are serial numbers of the devices
     '00000001': 

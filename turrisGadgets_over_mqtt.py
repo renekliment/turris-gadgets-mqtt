@@ -26,6 +26,10 @@ with open(swd + "config.yaml", 'r') as f:
 prefix = config['mqtt']['prefix']
 devices = config['devices']
 
+automessages = {}
+if ('automessages' in config) and (config['automessages']):
+    automessages = config['automessages']
+
 states = {
 	'PGX': '0',
 	'PGY': '0',
@@ -99,6 +103,10 @@ def on_mqtt_disconnect(mqttc, userdata, rc):
 def on_mqtt_connect(mqttc, userdata, flags, rc):
 	mqttc.subscribe(prefix + '#', config['mqtt']['default_qos'])
 	
+	if ('on_connect' in automessages):
+		for item in automessages['on_connect']:
+			mqttc.publish(prefix + item['topic'], item['payload'], item['qos'], item['retain'])	
+	
 cmd('WHO AM I?')
 
 # gets the system in a defined state
@@ -108,6 +116,9 @@ mqttc = mqtt.Client(client_id=config['mqtt']['client_id'], protocol=3)
 mqttc.on_message = on_mqtt_message
 mqttc.on_disconnect = on_mqtt_disconnect
 mqttc.on_connect = on_mqtt_connect
+
+if ('last_will' in automessages):
+	mqttc.will_set(prefix + automessages['last_will']['topic'], automessages['last_will']['payload'], automessages['last_will']['qos'], automessages['last_will']['retain'])
 
 if (config['mqtt']['user'] != ''):
 	mqttc.username_pw_set(config['mqtt']['user'], config['mqtt']['password'])
