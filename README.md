@@ -2,7 +2,7 @@
 
 ## K čemu je to dobré
 
-- Turris Dongle je prakticky sériová linka a k té se může bez problému připojit pouze jedna aplikace a pokud chceme, aby více aplikací přistupovalo ke Gadgetům, je třeba něco jako brána (což je právě `turrisGadgets_over_mqtt.py`)
+- Turris Dongle je prakticky sériová linka a k té se může bez problému připojit pouze jedna aplikace a pokud chceme, aby více aplikací přistupovalo ke Gadgetům, je třeba něco jako brána (což je právě `turris-gadgets_mqtt_gateway.py`)
 - odstiňuje aplikace od nízkoúrovnějšího rozhraní poskytovaného Donglem a poskytuje zaběhlé (snadno se zapojí do stávající IoT infrastruktury) _vyšší-úrovňové_ rozhraní (je velmi, velmi jednoduché na použití ať už aplikacemi, či _ručně_)
 - pomocí ACL na MQTT brokeru můžeme jednotlivým aplikacím nastavovat oprávnění k určitým zařízením, ať už co mohou ovládat, nebo jaké zprávy od jakých zařízeních mohou příjmat
 
@@ -61,12 +61,12 @@ V souboru `config.yaml` nastavíme:
 ## Spuštění Gadgets <---> MQTT brány
 **VAROVÁNÍ:** Skript vždy po spuštění vypne alarm/pípání a oba výstupy (zásuvky / relé), aby se dostal do definovaného stavu.
 
-`python /root/turris-gadgets-mqtt/turrisGadgets_over_mqtt.py`
+`python /root/turris-gadgets-mqtt/turris-gadgets_mqtt_gateway.py`
 
 Pokud vše funguje a chceme nechat skript puštěný i po odhlášení z Turrisu:
 
 1. `opkg install screen`
-2. `screen -dmS turrisGadgets_over_mqtt /root/turris-gadgets-mqtt/turrisGadgets_over_mqtt.py`
+2. `screen -dmS turrisGadgets_over_mqtt /root/turris-gadgets-mqtt/turris-gadgets_mqtt_gateway.py`
 
 ## Testování komunikace s Gadgety
 Poslouchání zpráv od Gadgetů: `mosquitto_sub -h 192.168.1.1 -t "turrisGadgets/#" -v`, kde případně upravíme IP adresu Turrisu, na kterém běží mosquitto a prefix, pod kterým se Gadgety nacházejí. Můžeme pustit jak na Turrisu, tak z kteréhokoliv zařízení, které tento nástroj obsahuje a může se na Turris po síti dostat.

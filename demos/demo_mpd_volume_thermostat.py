@@ -1,17 +1,29 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Controlling MPD volume with a thermostat
+
+Demo for the Turris Gadgets MQTT gateway
+"""
+
+import logging
 import os
-import yaml
-import mpd
-import paho.mqtt.client as mqtt
 import time
 from socket import error as socket_error
 
+import yaml
+import paho.mqtt.client as mqtt
+import mpd # pylint: disable=import-error
+
 __author__ = "René Kliment"
 __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 2004"
-__version__ = "0.3"
+__version__ = "0.4"
 __email__ = "rene@renekliment.cz"
+
+logging.basicConfig(format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 swd = os.path.dirname(os.path.abspath(__file__)) + '/'
 with open(swd + "config.demo_mpd_volume_thermostat.yaml", 'r') as f:
@@ -19,38 +31,42 @@ with open(swd + "config.demo_mpd_volume_thermostat.yaml", 'r') as f:
 
 prefix = config['mqtt']['prefix']
 
-def on_mqtt_message(mqttc, obj, msg):
+
+def on_mqtt_message(client, obj, msg): # pylint: disable=unused-argument,missing-docstring
 
 	# This condition is not needed since we **only subscribe to this single topic** (see the mqttc.subscribe call below),
 	# however if we were to enhance this script's capabilities and subscribed to multiple topics,
-	# this is here to remind us to filter the messages. 
+	# this is here to remind us to filter the messages.
 	if (msg.topic == prefix + 'thermostat/set'):
-		mpdc.setvol(int( 
+		volume = int(
 				((float(msg.payload) - 6) / 34) * 100
-		));	
-		
-def on_mqtt_disconnect(mqttc, userdata, rc):
+		)
+		mpdc.setvol(volume) # pylint: disable=no-member
 
-	print("# Called on_disconnect!")
+
+def on_mqtt_disconnect(client, userdata, rc): # pylint: disable=unused-argument,missing-docstring,invalid-name
+
+	logging.info("Called on_disconnect!")
 	while True:
 		try:
-			if (mqttc.reconnect() == 0):
-				print("# Reconnected successfully.")
+			if (client.reconnect() == 0):
+				logging.info("Reconnected successfully.")
 				break
 		except socket_error:
 			pass
 
 		time.sleep(1)
 
-def on_mqtt_connect(mqttc, userdata, flags, rc):
-	mqttc.subscribe(prefix + 'thermostat/set', config['mqtt']['default_qos'])
-		
+
+def on_mqtt_connect(client, userdata, flags, rc): # pylint: disable=unused-argument,missing-docstring,invalid-name
+	client.subscribe(prefix + 'thermostat/set', config['mqtt']['default_qos'])
+
 # MPD client
 mpdc = mpd.MPDClient(use_unicode=True)
 mpdc.connect(config['mpd']['server'], config['mpd']['port'])
 
 if (config['mpd']['password'] != ''):
-	mpdc.password(config['mpd']['password'])
+	mpdc.password(config['mpd']['password']) # pylint: disable=no-member
 
 # MQTT client
 mqttc = mqtt.Client(client_id=config['mqtt']['client_id'], protocol=3)
@@ -66,5 +82,5 @@ mqttc.connect(config['mqtt']['server'], config['mqtt']['port'], config['mqtt']['
 mqttc.loop_start()
 
 while True:
-	mpdc.ping()
+	mpdc.ping() # pylint: disable=no-member
 	time.sleep(30)
