@@ -155,7 +155,7 @@ while True:
 	line = ''
 
 	while dongle_serial.inWaiting():
-		line = dongle_serial.readline().decode().strip()
+		line = dongle_serial.readline().decode('ascii', errors='ignore').strip()
 		if not line:
 			break
 
