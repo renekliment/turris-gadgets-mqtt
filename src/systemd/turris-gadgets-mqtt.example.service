@@ -1,0 +1,13 @@
+[Unit]
+Description=turris-gadgets-mqtt
+#After=mosquitto.service
+
+[Service]
+Environment=PIPENV_VENV_IN_PROJECT=1
+WorkingDirectory=/opt/turris-gadgets-mqtt/
+ExecStartPre=/usr/local/bin/pipenv install
+ExecStart=/usr/local/bin/pipenv run python3 -u src/turris-gadgets_mqtt_gateway.py
+User=turris-gadgets-mqtt
+
+[Install]
+WantedBy=multi-user.target
