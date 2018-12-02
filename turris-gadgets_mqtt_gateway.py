@@ -3,6 +3,7 @@
 
 """MQTT gateway for Turris Gadgets dongle"""
 
+import argparse
 import logging
 import os
 import time
@@ -21,12 +22,25 @@ __license__ = "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE, Version 2, December 
 __version__ = "0.5"
 __email__ = "rene@renekliment.cz"
 
+DEFAULT_CONFIG_FILE = os.path.join(
+	os.path.dirname(os.path.abspath(__file__)),
+	'config.yaml',
+)
+
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument(
+	'--config',
+	default=DEFAULT_CONFIG_FILE,
+	help='config file (default: {script_directory}/config.yaml)',
+)
+
+args = arg_parser.parse_args()
+
 logging.basicConfig(format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-script_directory = os.path.dirname(os.path.abspath(__file__)) + '/'
-with open(script_directory + "config.yaml", 'r') as f:
+with open(args.config, 'r') as f:
 	config = yaml.load(f)
 
 prefix = config['mqtt']['prefix']
