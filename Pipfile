@@ -16,5 +16,5 @@ PyYAML = "*"
 #python_version = "3.7"
 
 [scripts]
-lint = "pylint --rcfile=pylintrc turris-gadgets_mqtt_gateway.py demos"
-yamlcheck = "python -c \"import yaml; yaml.load(open('config.template.yaml')); yaml.load(open('demos/config.demo_mpd_volume_thermostat.template.yaml')); yaml.load(open('demos/config.demo_remote_control_socket.template.yaml'));\""
+lint = "pylint --rcfile=pylintrc src"
+yamlcheck = "python -c \"import yaml; yaml.load(open('src/config.template.yaml')); yaml.load(open('src/demos/config.demo_mpd_volume_thermostat.template.yaml')); yaml.load(open('src/demos/config.demo_remote_control_socket.template.yaml'));\""
