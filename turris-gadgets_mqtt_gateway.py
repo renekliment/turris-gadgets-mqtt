@@ -189,7 +189,7 @@ while True:
 				else:
 					mqttc.publish(prefix + devices[serial]['mqttPath'], chunks[0][-1:], config['mqtt']['default_qos'], False)
 
-			elif (product == 'JA-81M') or (product == 'JA-83M'):
+			elif (product in ('JA-81M', 'JA-83M')):
 				chunks = message.split(' ')
 
 				mqttc.publish(prefix + devices[serial]['mqttPath'] + '/lowbattery', chunks[1][-1:], config['mqtt']['default_qos'], True)
