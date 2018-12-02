@@ -11,7 +11,7 @@
 
 Adam Hořčica měl na LinuxDays 2014 [přednášku o protokolech pro IoT (YouTube)](https://www.youtube.com/watch?v=nsT1wlbAKug), jsou k ní i [slajdy](https://www.linuxdays.cz/2014/video/Adam_Horcica-Komunikacni_protokoly_pro_IoT.pdf).
 
-## Instalace mosquitto (MQTT broker)
+## Instalace mosquitto (MQTT broker) pod OpenWRT / Turris OS
 ```
 opkg install mosquitto mosquitto-client
 /etc/init.d/mosquitto enable
@@ -21,7 +21,7 @@ opkg install mosquitto mosquitto-client
 
 **Poznámka:** Je vhodné (ale ne nutné) si zkompilovat novější verzi _mosquitta_ s podporou WebSockets.
 
-## Instalace 
+## Instalace pod OpenWRT / Turris OS
 
 1. Instalace systémových závislostí
 	```
@@ -45,6 +45,36 @@ opkg install mosquitto mosquitto-client
 	```
 	pip3 install python-mpd2
 	```
+
+## Příklad instalace pro standardní distribuci
+
+Zde uvedeno pro Ubuntu 18.04.
+
+```bash
+apt update
+
+# zde nainstalujte a nastavte bezpečně mosquitto, nebo jiný MQTT broker
+
+apt install python3 python3-pip
+pip3 install pipenv
+
+cd /opt
+git clone https://github.com/renekliment/turris-gadgets-mqtt.git
+cd turris-gadgets-mqtt
+cp src/config.template.yaml src/config.yaml
+
+# pro jednoznačné namapování donglu na /dev/ zařízení můžete využít ukázkové udev pravidlo
+# vyplňte src/config.yaml dle vašich potřeb
+
+cp src/systemd/turris-gadgets-mqtt.example.service /etc/systemd/system/turris-gadgets-mqtt.service
+useradd -r turris-gadgets-mqtt
+gpasswd -a turris-gadgets-mqtt dialout
+chown -R turris-gadgets-mqtt:nogroup .
+systemctl daemon-reload
+
+# spuštění
+systemctl start turris-gadgets-mqtt
+```
 
 ## Nastavení MQTT brány
 
