@@ -78,9 +78,9 @@ systemctl start turris-gadgets-mqtt
 
 ## Nastavení MQTT brány
 
-Zkopírujeme si šablonu konfigurace do finálního souboru `cp config.template.yaml config.yaml`.
+Zkopírujeme si šablonu konfigurace do finálního souboru `cp src/config.template.yaml src/config.yaml`.
 
-V souboru `config.yaml` nastavíme:
+V souboru `src/config.yaml` nastavíme:
 
 1. údaje pro připojení k MQTT brokeru (můžeme ponechat výchozí, pokud jsme nic neměnili)
 2. sériová čísla Gadgetů - jsou to klíče v poli devices
