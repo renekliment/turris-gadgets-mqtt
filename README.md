@@ -11,7 +11,7 @@
 
 Adam Hořčica měl na LinuxDays 2014 [přednášku o protokolech pro IoT (YouTube)](https://www.youtube.com/watch?v=nsT1wlbAKug), jsou k ní i [slajdy](https://www.linuxdays.cz/2014/video/Adam_Horcica-Komunikacni_protokoly_pro_IoT.pdf).
 
-## Instalace mosquitto (MQTT broker)
+## Instalace mosquitto (MQTT broker) pod OpenWRT / Turris OS
 ```
 opkg install mosquitto mosquitto-client
 /etc/init.d/mosquitto enable
@@ -21,30 +21,60 @@ opkg install mosquitto mosquitto-client
 
 **Poznámka:** Je vhodné (ale ne nutné) si zkompilovat novější verzi _mosquitta_ s podporou WebSockets.
 
-## Instalace 
+## Instalace pod OpenWRT / Turris OS
 
 1. Instalace systémových závislostí
 	```
 	opkg update # Aktualizace seznamu balíků
-	opkg install python-pip git
+	opkg install python3-pip git
 	```
 	
 2. Stažení MQTT brány
     ```
-    cd /root/
+    cd /opt/
     git clone git://github.com/renekliment/turris-gadgets-mqtt.git
     cd turris-gadgets-mqtt
     ```
 	
 3. Instalace python závislostí
 	```
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 	```
 	
 4. (volitelné) Instalace MPD python modulu - potřeba pouze pro demo s MPD
 	```
-	pip install python-mpd2
+	pip3 install python-mpd2
 	```
+
+## Příklad instalace pro standardní distribuci
+
+Zde uvedeno pro Ubuntu 18.04.
+
+```bash
+apt update
+
+# zde nainstalujte a nastavte bezpečně mosquitto, nebo jiný MQTT broker
+
+apt install python3 python3-pip
+pip3 install pipenv
+
+cd /opt
+git clone https://github.com/renekliment/turris-gadgets-mqtt.git
+cd turris-gadgets-mqtt
+cp src/config.template.yaml src/config.yaml
+
+# pro jednoznačné namapování donglu na /dev/ zařízení můžete využít ukázkové udev pravidlo
+# vyplňte src/config.yaml dle vašich potřeb
+
+cp src/systemd/turris-gadgets-mqtt.example.service /etc/systemd/system/turris-gadgets-mqtt.service
+useradd -r turris-gadgets-mqtt
+gpasswd -a turris-gadgets-mqtt dialout
+chown -R turris-gadgets-mqtt:nogroup .
+systemctl daemon-reload
+
+# spuštění
+systemctl start turris-gadgets-mqtt
+```
 
 ## Nastavení MQTT brány
 
@@ -61,12 +91,12 @@ V souboru `config.yaml` nastavíme:
 ## Spuštění Gadgets <---> MQTT brány
 **VAROVÁNÍ:** Skript vždy po spuštění vypne alarm/pípání a oba výstupy (zásuvky / relé), aby se dostal do definovaného stavu.
 
-`python /root/turris-gadgets-mqtt/turris-gadgets_mqtt_gateway.py`
+`python3 /opt/turris-gadgets-mqtt/src/turris-gadgets_mqtt_gateway.py`
 
 Pokud vše funguje a chceme nechat skript puštěný i po odhlášení z Turrisu:
 
 1. `opkg install screen`
-2. `screen -dmS turrisGadgets_over_mqtt /root/turris-gadgets-mqtt/turris-gadgets_mqtt_gateway.py`
+2. `screen -dmS turrisGadgets_over_mqtt python3 /opt/turris-gadgets-mqtt/src/turris-gadgets_mqtt_gateway.py`
 
 ## Testování komunikace s Gadgety
 Poslouchání zpráv od Gadgetů: `mosquitto_sub -h 192.168.1.1 -t "turrisGadgets/#" -v`, kde případně upravíme IP adresu Turrisu, na kterém běží mosquitto a prefix, pod kterým se Gadgety nacházejí. Můžeme pustit jak na Turrisu, tak z kteréhokoliv zařízení, které tento nástroj obsahuje a může se na Turris po síti dostat.

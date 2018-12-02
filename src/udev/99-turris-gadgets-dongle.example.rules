@@ -1,0 +1,3 @@
+# put into /etc/udev/rules.d
+# to also match by a serial number, add ATTRS{serial}=="xxx"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", SYMLINK+="turris-gadgets-dongle"
