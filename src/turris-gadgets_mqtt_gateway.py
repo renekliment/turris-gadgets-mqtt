@@ -40,8 +40,8 @@ logging.basicConfig(format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-with open(args.config, 'r') as f:
-	config = yaml.load(f)
+with open(args.config, 'r', encoding="utf-8") as f:
+	config = yaml.load(f, Loader=yaml.SafeLoader)
 
 prefix = config['mqtt']['prefix']
 

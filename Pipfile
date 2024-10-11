@@ -5,6 +5,9 @@ verify_ssl = true
 
 [dev-packages]
 pylint = "*"
+tomli = "*" # for pylint on Python 3.10
+typing_extensions = "*" # for pylint on Python 3.10
+dill = "*" # for pylint on Python 3.10
 python-mpd2 = "*"
 
 [packages]
@@ -13,8 +16,8 @@ paho-mqtt = "*"
 PyYAML = "*"
 
 [requires]
-#python_version = "3.7"
+#python_version = ">=3.10"
 
 [scripts]
 lint = "pylint --rcfile=pylintrc src"
-yamlcheck = "python -c \"import yaml; yaml.load(open('src/config.template.yaml')); yaml.load(open('src/demos/config.demo_mpd_volume_thermostat.template.yaml')); yaml.load(open('src/demos/config.demo_remote_control_socket.template.yaml'));\""
+yamlcheck = "python -c \"import yaml; yaml.load(open('src/config.template.yaml', encoding='utf-8'), Loader=yaml.SafeLoader); yaml.load(open('src/demos/config.demo_mpd_volume_thermostat.template.yaml', encoding='utf-8'), Loader=yaml.SafeLoader); yaml.load(open('src/demos/config.demo_remote_control_socket.template.yaml', encoding='utf-8'), Loader=yaml.SafeLoader);\""

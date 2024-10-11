@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 swd = os.path.dirname(os.path.abspath(__file__)) + '/'
-with open(swd + "config.demo_remote_control_socket.yaml", 'r') as f:
-	config = yaml.load(f)
+with open(swd + "config.demo_remote_control_socket.yaml", 'r', encoding="utf-8") as f:
+	config = yaml.load(f, Loader=yaml.SafeLoader)
 
 prefix = config['mqtt']['prefix']
 

@@ -23,7 +23,7 @@ class TurrisGadgetsController:
 	statesToBe = None
 	stateRepeatsLeft = 0
 
-	def __init__(
+	def __init__(  # pylint: disable=too-many-positional-arguments
 			self,
 			devices: dict,
 			mqtt_default_qos: int,
@@ -55,8 +55,9 @@ class TurrisGadgetsController:
 
 		self.statesToBe.update(new_states)
 
-		self.send_to_serial('TX ENROLL:0 PGX:%s PGY:%s ALARM:%s BEEP:%s'
-					 % (self.statesToBe['PGX'], self.statesToBe['PGY'], self.statesToBe['ALARM'], self.statesToBe['BEEP']))
+		self.send_to_serial(
+			f"TX ENROLL:0 PGX:{self.statesToBe['PGX']} PGY:{self.statesToBe['PGY']} ALARM:{self.statesToBe['ALARM']} BEEP:{self.statesToBe['BEEP']}"  # pylint: disable=line-too-long
+		)
 
 		self.stateRepeatsLeft -= 1
 
