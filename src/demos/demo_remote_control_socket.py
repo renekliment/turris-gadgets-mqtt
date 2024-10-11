@@ -24,48 +24,63 @@ logging.basicConfig(format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-swd = os.path.dirname(os.path.abspath(__file__)) + '/'
-with open(swd + "config.demo_remote_control_socket.yaml", 'r', encoding="utf-8") as f:
-	config = yaml.load(f, Loader=yaml.SafeLoader)
+swd = os.path.dirname(os.path.abspath(__file__)) + "/"
+with open(swd + "config.demo_remote_control_socket.yaml", "r", encoding="utf-8") as f:
+    config = yaml.load(f, Loader=yaml.SafeLoader)
 
-prefix = config['mqtt']['prefix']
-
-
-def on_mqtt_message(client, obj, msg): # pylint: disable=unused-argument,missing-docstring
-
-	# This first condition is not needed since we **only subscribe to this single topic** (see the mqttc.subscribe call below),
-	# however if we were to enhance this script's capabilities and subscribed to multiple topics,
-	# this is here to remind us to filter the messages.
-	if (msg.topic == prefix + 'remote1R') and (msg.payload in ['0', '1']):
-		client.publish(prefix + 'room/socket/lamp/control', msg.payload, config['mqtt']['default_qos'], False)
+prefix = config["mqtt"]["prefix"]
 
 
-def on_mqtt_disconnect(client, userdata, rc): # pylint: disable=unused-argument,missing-docstring,invalid-name
+def on_mqtt_message(
+    client, obj, msg
+):  # pylint: disable=unused-argument,missing-docstring
 
-	logging.info("Called on_disconnect!")
-	while True:
-		try:
-			if (client.reconnect() == 0):
-				logging.info("Reconnected successfully.")
-				break
-		except socket_error:
-			pass
+    # This first condition is not needed since we **only subscribe to this single topic**
+    # (see the mqttc.subscribe call below).
+    # However, if we were to enhance this script's capabilities and subscribed to multiple topics,
+    # this is here to remind us to filter the messages.
+    if (msg.topic == prefix + "remote1R") and (msg.payload in ["0", "1"]):
+        client.publish(
+            prefix + "room/socket/lamp/control",
+            msg.payload,
+            config["mqtt"]["default_qos"],
+            False,
+        )
 
-		time.sleep(1)
+
+def on_mqtt_disconnect(
+    client, userdata, rc
+):  # pylint: disable=unused-argument,missing-docstring,invalid-name
+
+    logging.info("Called on_disconnect!")
+    while True:
+        try:
+            if client.reconnect() == 0:
+                logging.info("Reconnected successfully.")
+                break
+        except socket_error:
+            pass
+
+        time.sleep(1)
 
 
-def on_mqtt_connect(client, userdata, flags, rc): # pylint: disable=unused-argument,missing-docstring,invalid-name
-	client.subscribe(prefix + 'remote1R', config['mqtt']['default_qos'])
+def on_mqtt_connect(
+    client, userdata, flags, rc
+):  # pylint: disable=unused-argument,missing-docstring,invalid-name
+    client.subscribe(prefix + "remote1R", config["mqtt"]["default_qos"])
+
 
 # MQTT client
-mqttc = mqtt.Client(client_id=config['mqtt']['client_id'], protocol=3)
+mqttc = mqtt.Client(client_id=config["mqtt"]["client_id"], protocol=3)
 mqttc.on_message = on_mqtt_message
 mqttc.on_disconnect = on_mqtt_disconnect
 mqttc.on_connect = on_mqtt_connect
 
-if (config['mqtt']['user'] != ''):
-	mqttc.username_pw_set(config['mqtt']['user'], config['mqtt']['password'])
+if config["mqtt"]["user"] != "":
+    mqttc.username_pw_set(config["mqtt"]["user"], config["mqtt"]["password"])
 
-mqttc.connect(config['mqtt']['server'], config['mqtt']['port'], config['mqtt']['timeout'])
+mqttc.connect(
+    config["mqtt"]["server"], config["mqtt"]["port"], config["mqtt"]["timeout"]
+)
 
 mqttc.loop_forever()

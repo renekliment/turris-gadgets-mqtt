@@ -4,6 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+black = "*"
 pylint = "*"
 tomli = "*" # for pylint on Python 3.10
 typing_extensions = "*" # for pylint on Python 3.10
