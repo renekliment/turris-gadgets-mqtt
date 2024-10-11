@@ -12,181 +12,220 @@ logger.setLevel(logging.DEBUG)
 
 
 class TurrisGadgetsController:
-	"""Simple serial-MQTT bridge for Turris Gadgets"""
-	states = {
-		'PGX': '0',
-		'PGY': '0',
-		'ALARM': '0',
-		'BEEP': 'NONE',
-	}
+    """Simple serial-MQTT bridge for Turris Gadgets"""
 
-	statesToBe = None
-	stateRepeatsLeft = 0
+    states = {
+        "PGX": "0",
+        "PGY": "0",
+        "ALARM": "0",
+        "BEEP": "NONE",
+    }
 
-	def __init__(  # pylint: disable=too-many-positional-arguments
-			self,
-			devices: dict,
-			mqtt_default_qos: int,
-			mqtt_prefix: str,
-			send_to_serial: Callable[[str], None],
-			send_to_mqtt: Callable[[str, str, int, bool], None]
-	):
-		self.devices = devices
-		self.mqtt_default_qos = mqtt_default_qos
-		self.mqtt_prefix = mqtt_prefix
+    statesToBe = None
+    stateRepeatsLeft = 0
 
-		self.send_to_serial = send_to_serial
-		self.send_to_mqtt = send_to_mqtt
+    def __init__(  # pylint: disable=too-many-positional-arguments
+        self,
+        devices: dict,
+        mqtt_default_qos: int,
+        mqtt_prefix: str,
+        send_to_serial: Callable[[str], None],
+        send_to_mqtt: Callable[[str, str, int, bool], None],
+    ):
+        self.devices = devices
+        self.mqtt_default_qos = mqtt_default_qos
+        self.mqtt_prefix = mqtt_prefix
 
-		self.send_to_serial('WHO AM I?')
+        self.send_to_serial = send_to_serial
+        self.send_to_mqtt = send_to_mqtt
 
-		# gets the system in a defined state
-		self.send_state({})
+        self.send_to_serial("WHO AM I?")
 
-	def send_state(self, new_states: dict):
-		"""Send state message to the dongle"""
+        # gets the system in a defined state
+        self.send_state({})
 
-		if (self.statesToBe is None):
-			self.statesToBe = self.states.copy()
-			self.stateRepeatsLeft = 3
+    def send_state(self, new_states: dict):
+        """Send state message to the dongle"""
 
-		if (new_states):
-			self.stateRepeatsLeft = 3
+        if self.statesToBe is None:
+            self.statesToBe = self.states.copy()
+            self.stateRepeatsLeft = 3
 
-		self.statesToBe.update(new_states)
+        if new_states:
+            self.stateRepeatsLeft = 3
 
-		self.send_to_serial(
-			f"TX ENROLL:0 PGX:{self.statesToBe['PGX']} PGY:{self.statesToBe['PGY']} ALARM:{self.statesToBe['ALARM']} BEEP:{self.statesToBe['BEEP']}"  # pylint: disable=line-too-long
-		)
+        self.statesToBe.update(new_states)
 
-		self.stateRepeatsLeft -= 1
+        self.send_to_serial(
+            f"TX ENROLL:0 PGX:{self.statesToBe['PGX']} PGY:{self.statesToBe['PGY']} ALARM:{self.statesToBe['ALARM']} BEEP:{self.statesToBe['BEEP']}"  # pylint: disable=line-too-long
+        )
 
-		if (self.stateRepeatsLeft == 0):
-			self.statesToBe = None
+        self.stateRepeatsLeft -= 1
 
-	def handle_from_mqtt(self, serial: str, topic: str, payload: str):  # pylint: disable=missing-docstring
-		product = self.devices[serial]['product']
-		device_mqtt_path = self.mqtt_prefix + self.devices[serial]['mqttPath']
+        if self.stateRepeatsLeft == 0:
+            self.statesToBe = None
 
-		if (product == 'AC-88'):
-			if (topic == device_mqtt_path + '/control') and (payload in ["0", "1"]):
-				self.send_state({
-					self.devices[serial]['stateLabel']: payload
-				})
+    def handle_from_mqtt(
+        self, serial: str, topic: str, payload: str
+    ):  # pylint: disable=missing-docstring
+        product = self.devices[serial]["product"]
+        device_mqtt_path = self.mqtt_prefix + self.devices[serial]["mqttPath"]
 
-		elif (product == 'JA-80L'):
-			if (topic == device_mqtt_path + '/alarm/control') and (payload in ["0", "1"]):
-				self.states['ALARM'] = payload
-				self.send_state({})
+        if product == "AC-88":
+            if (topic == device_mqtt_path + "/control") and (payload in ["0", "1"]):
+                self.send_state({self.devices[serial]["stateLabel"]: payload})
 
-			elif (topic == device_mqtt_path + '/beep/control') and (payload in ["none", "slow", "fast"]):
-				self.states['BEEP'] = payload.upper()
-				self.send_state({})
+        elif product == "JA-80L":
+            if (topic == device_mqtt_path + "/alarm/control") and (
+                payload in ["0", "1"]
+            ):
+                self.states["ALARM"] = payload
+                self.send_state({})
 
-	def handle_from_serial(self, line: str):  # pylint: disable=missing-docstring
-		if (line == 'OK'):
-			if (self.stateRepeatsLeft > 0) and (self.statesToBe is not None):
+            elif (topic == device_mqtt_path + "/beep/control") and (
+                payload in ["none", "slow", "fast"]
+            ):
+                self.states["BEEP"] = payload.upper()
+                self.send_state({})
 
-				interval = 0.2 + random.random() * 0.3
-				Timer(interval, self.send_state, [{}]).start()
+    def handle_from_serial(self, line: str):  # pylint: disable=missing-docstring
+        if line == "OK":
+            if (self.stateRepeatsLeft > 0) and (self.statesToBe is not None):
 
-		if (line == 'OK') or (line == 'ERROR') or (line.startswith('TURRIS')):
-			return
+                interval = 0.2 + random.random() * 0.3
+                Timer(interval, self.send_state, [{}]).start()
 
-		m = re.match("\[(\d+)\] ([a-zA-Z0-9_-]+) (.+)", line)  # pylint: disable=anomalous-backslash-in-string
-		serial = m.group(1)
-		product = m.group(2)
-		message = m.group(3)
+        if (line == "OK") or (line == "ERROR") or (line.startswith("TURRIS")):
+            return
 
-		if (serial not in self.devices.keys()):
-			logger.warning("# Serial number %s not found in the config!", serial)
-			return
+        m = re.match(r"\[(\d+)\] ([a-zA-Z0-9_-]+) (.+)", line)
+        serial = m.group(1)
+        product = m.group(2)
+        message = m.group(3)
 
-		if self.devices[serial]['product'] != product:
-			logger.warning("# Serial number (%s) / product (%s) mismatch!", serial, product)
-			return
+        if serial not in self.devices.keys():
+            logger.warning("# Serial number %s not found in the config!", serial)
+            return
 
-		self.process_device_message(serial, message)
+        if self.devices[serial]["product"] != product:
+            logger.warning(
+                "# Serial number (%s) / product (%s) mismatch!", serial, product
+            )
+            return
 
-	def process_device_message(self, serial: str, message: str):  # pylint: disable=too-many-branches,too-many-statements,missing-docstring
-		product = self.devices[serial]['product']
-		device_mqtt_path = self.mqtt_prefix + self.devices[serial]['mqttPath']
-		default_qos = self.mqtt_default_qos
+        self.process_device_message(serial, message)
 
-		self.send_to_mqtt(device_mqtt_path + '/lastseen', str(time.time()), default_qos, True)
+    def process_device_message(
+        self, serial: str, message: str
+    ):  # pylint: disable=too-many-branches,too-many-statements,missing-docstring
+        product = self.devices[serial]["product"]
+        device_mqtt_path = self.mqtt_prefix + self.devices[serial]["mqttPath"]
+        default_qos = self.mqtt_default_qos
 
-		if (product == 'RC-86K'):
-			chunks = message.split(' ')
+        self.send_to_mqtt(
+            device_mqtt_path + "/lastseen", str(time.time()), default_qos, True
+        )
 
-			self.send_to_mqtt(device_mqtt_path + '/lowbattery', chunks[1][-1:], default_qos, True)
+        if product == "RC-86K":
+            chunks = message.split(" ")
 
-			if (chunks[0] == 'PANIC'):
-				self.send_to_mqtt(device_mqtt_path, 'panic', default_qos, False)
-			else:
-				self.send_to_mqtt(device_mqtt_path, chunks[0][-1:], default_qos, False)
+            self.send_to_mqtt(
+                device_mqtt_path + "/lowbattery", chunks[1][-1:], default_qos, True
+            )
 
-		elif (product in ('JA-81M', 'JA-83M')):
-			chunks = message.split(' ')
+            if chunks[0] == "PANIC":
+                self.send_to_mqtt(device_mqtt_path, "panic", default_qos, False)
+            else:
+                self.send_to_mqtt(device_mqtt_path, chunks[0][-1:], default_qos, False)
 
-			self.send_to_mqtt(device_mqtt_path + '/lowbattery', chunks[1][-1:], default_qos, True)
+        elif product in ("JA-81M", "JA-83M"):
+            chunks = message.split(" ")
 
-			if (chunks[0] == 'TAMPER'):
-				self.send_to_mqtt(device_mqtt_path + '/tamper', chunks[2][-1:], default_qos, True)
-			elif (chunks[0] == 'SENSOR'):
-				self.send_to_mqtt(device_mqtt_path, chunks[2][-1:], default_qos, True)
+            self.send_to_mqtt(
+                device_mqtt_path + "/lowbattery", chunks[1][-1:], default_qos, True
+            )
 
-		elif (product == 'JA-83P'):
-			chunks = message.split(' ')
+            if chunks[0] == "TAMPER":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/tamper", chunks[2][-1:], default_qos, True
+                )
+            elif chunks[0] == "SENSOR":
+                self.send_to_mqtt(device_mqtt_path, chunks[2][-1:], default_qos, True)
 
-			self.send_to_mqtt(device_mqtt_path + '/lowbattery', chunks[1][-1:], default_qos, True)
+        elif product == "JA-83P":
+            chunks = message.split(" ")
 
-			if (chunks[0] == 'TAMPER'):
-				self.send_to_mqtt(device_mqtt_path + '/tamper', chunks[2][-1:], default_qos, True)
-			elif (chunks[0] == 'SENSOR'):
-				self.send_to_mqtt(device_mqtt_path, '', default_qos, False)
+            self.send_to_mqtt(
+                device_mqtt_path + "/lowbattery", chunks[1][-1:], default_qos, True
+            )
 
-		elif (product == 'JA-85ST'):
-			chunks = message.split(' ')
+            if chunks[0] == "TAMPER":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/tamper", chunks[2][-1:], default_qos, True
+                )
+            elif chunks[0] == "SENSOR":
+                self.send_to_mqtt(device_mqtt_path, "", default_qos, False)
 
-			self.send_to_mqtt(device_mqtt_path + '/lowbattery', chunks[1][-1:], default_qos, True)
+        elif product == "JA-85ST":
+            chunks = message.split(" ")
 
-			if (chunks[0] == 'TAMPER'):
-				self.send_to_mqtt(device_mqtt_path + '/tamper', chunks[2][-1:], default_qos, True)
-			elif (chunks[0] == 'DEFECT'):
-				self.send_to_mqtt(device_mqtt_path + '/defect', chunks[2][-1:], default_qos, True)
-			elif (chunks[0] == 'SENSOR'):
-				self.send_to_mqtt(device_mqtt_path, '', default_qos, False)
-			elif (chunks[0] == 'BUTTON'):
-				self.send_to_mqtt(device_mqtt_path + '/button', '', default_qos, False)
+            self.send_to_mqtt(
+                device_mqtt_path + "/lowbattery", chunks[1][-1:], default_qos, True
+            )
 
-		elif (product == 'JA-82SH'):
-			chunks = message.split(' ')
+            if chunks[0] == "TAMPER":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/tamper", chunks[2][-1:], default_qos, True
+                )
+            elif chunks[0] == "DEFECT":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/defect", chunks[2][-1:], default_qos, True
+                )
+            elif chunks[0] == "SENSOR":
+                self.send_to_mqtt(device_mqtt_path, "", default_qos, False)
+            elif chunks[0] == "BUTTON":
+                self.send_to_mqtt(device_mqtt_path + "/button", "", default_qos, False)
 
-			self.send_to_mqtt(device_mqtt_path + '/lowbattery', chunks[1][-1:], default_qos, True)
+        elif product == "JA-82SH":
+            chunks = message.split(" ")
 
-			if (chunks[0] == 'TAMPER'):
-				self.send_to_mqtt(device_mqtt_path + '/tamper', chunks[2][-1:], default_qos, True)
-			elif (chunks[0] == 'SENSOR'):
-				self.send_to_mqtt(device_mqtt_path, '', default_qos, False)
+            self.send_to_mqtt(
+                device_mqtt_path + "/lowbattery", chunks[1][-1:], default_qos, True
+            )
 
-		elif (product == 'JA-80L'):
-			chunks = message.split(' ')
+            if chunks[0] == "TAMPER":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/tamper", chunks[2][-1:], default_qos, True
+                )
+            elif chunks[0] == "SENSOR":
+                self.send_to_mqtt(device_mqtt_path, "", default_qos, False)
 
-			self.send_to_mqtt(device_mqtt_path + '/blackout', message[-1:], default_qos, True)
+        elif product == "JA-80L":
+            chunks = message.split(" ")
 
-			if (chunks[0] == 'BUTTON'):
-				self.send_to_mqtt(device_mqtt_path + '/button', '', default_qos, False)
-			elif (chunks[0] == 'TAMPER'):
-				self.send_to_mqtt(device_mqtt_path + '/tamper', '', default_qos, False)
+            self.send_to_mqtt(
+                device_mqtt_path + "/blackout", message[-1:], default_qos, True
+            )
 
-		elif (product == 'TP-82N'):
-			self.send_to_mqtt(device_mqtt_path + '/lowbattery', message[-1:], default_qos, True)
+            if chunks[0] == "BUTTON":
+                self.send_to_mqtt(device_mqtt_path + "/button", "", default_qos, False)
+            elif chunks[0] == "TAMPER":
+                self.send_to_mqtt(device_mqtt_path + "/tamper", "", default_qos, False)
 
-			if (message[0:3] == 'SET'):
-				self.send_to_mqtt(device_mqtt_path + '/set', message[4:8], default_qos, True)
-			elif (message[0:3] == 'INT'):
-				self.send_to_mqtt(device_mqtt_path + '/measured', message[4:8], default_qos, True)
+        elif product == "TP-82N":
+            self.send_to_mqtt(
+                device_mqtt_path + "/lowbattery", message[-1:], default_qos, True
+            )
 
-		elif (product == 'AC-88'):
-			self.states[self.devices[serial]['stateLabel']] = message[-1:]
-			self.send_to_mqtt(device_mqtt_path, message[-1:], default_qos, True)
+            if message[0:3] == "SET":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/set", message[4:8], default_qos, True
+                )
+            elif message[0:3] == "INT":
+                self.send_to_mqtt(
+                    device_mqtt_path + "/measured", message[4:8], default_qos, True
+                )
+
+        elif product == "AC-88":
+            self.states[self.devices[serial]["stateLabel"]] = message[-1:]
+            self.send_to_mqtt(device_mqtt_path, message[-1:], default_qos, True)
